@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joyeux Anniversaire !</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.159.0/three.min.js"></script>
+    <style>
+        /* Reset et bases */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            background: linear-gradient(135deg, #1a0f2e, #30122e, #471234);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animation de fond */
+        #background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Conteneur principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Titre principal */
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin: 20px 0;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 2px rgba(255,107,107,0.6)); }
+            to { filter: drop-shadow(0 0 6px rgba(255,217,61,0.8)); }
+        }
+
+        /* Grille de photos */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        @media (max-width: 768px) {
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .photo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .photo-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 20px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .photo-item:hover .photo-overlay {
+            opacity: 1;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90vh;
+            position: relative;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 10px;
+        }
+
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-nav:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .modal-prev {
+            left: 20px;
+        }
+
+        .modal-next {
+            right: 20px;
+        }
+
+        /* Message */
+        .message-container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 25px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .message {
+            font-size: 1.1em;
+            line-height: 1.8;
+            text-align: center;
+            color: #fff;
+        }
+
+        /* Timeline */
+        .timeline {
+            max-width: 700px;
+            margin: 40px auto;
+            position: relative;
+            padding: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, #ff6b6b, transparent);
+        }
+
+        .memory {
+            width: calc(50% - 30px);
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .memory.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .memory:nth-child(odd) {
+            margin-left: auto;
+        }
+
+        .memory::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .memory:nth-child(odd)::before {
+            left: -36px;
+        }
+
+        .memory:nth-child(even)::before {
+            right: -36px;
+        }
+
+        .memory-date {
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        /* Contrôles */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .control-button {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(5px);
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-button:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.1);
+        }
+
+        /* Effets spéciaux */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .memory {
+                width: calc(100% - 50px);
+                margin-left: 50px !important;
+            }
+
+            .memory::before {
+                left: -36px !important;
+            }
+
+            .modal-nav {
+                padding: 10px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .message {
+                font-size: 1em;
+            }
+
+            .controls {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .control-button {
+                width: 40px;
+                height: 40px;
+                font-size: 1em;
+            }
+
+            .modal-nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-animation"></canvas>
+    
+    <div class="container">
+        <h1>✨ Joyeux Anniversaire! ✨</h1>
+
+        <div class="photo-grid">
+            <div class="photo-item" onclick="openModal(0)">
+                <img src="./images/img1.jpg" alt="Souvenir 1">
+                <div class="photo-overlay">Moment magique 1</div>
+            </div>
+            <div class="photo-item" onclick="openModal(1)">
+                <img src="./images/img2.jpg" alt="Souvenir 2">
+                <div class="photo-overlay">Moment magique 2</div>
+            </div>
+            <div class="photo-item" onclick="openModal(2)">
+                <img src="./images/img3.jpg" alt="Souvenir 3">
+                <div class="photo-overlay">Moment magique 3</div>
+            </div>
+            <div class="photo-item" onclick="openModal(3)">
+                <img src="./images/img4.jpg" alt="Souvenir 4">
+                <div class="photo-overlay">Moment magique 4</div>
+            </div>
+            <div class="photo-item" onclick="openModal(4)">
+                <img src="./images/img5.jpg" alt="Souvenir 5">
+                <div class="photo-overlay">Moment magique 5</div>
+            </div>
+            <div class="photo-item" onclick="openModal(5)">
+                <img src="./images/img6.jpg" alt="Souvenir 6">
+                <div class="photo-overlay">Moment magique 6</div>
+            </div>
+        </div>
+
+        <div class="modal" id="photoModal">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <button class="modal-nav modal-prev" onclick="changeModalImage(-1)">❮</button>
+            <div class="modal-content">
+                <img src="" alt="Image agrandie" id="modalImage">
+            </div>
+            <button class="modal-nav modal-next" onclick="changeModalImage(1)">❯</button>
+        </div>
+
+        <div class="message-container">
+            <div class="message">
+                Chère M'mah,
+                
+                En ce jour merveilleux, nous célébrons non seulement une année de plus,
+                mais surtout tous les moments précieux que nous avons partagés ensemble.
+                Que cette nouvelle année t'apporte tout ce que tu désires !
+                
+                Avec toute notre affection ✨
+            </div>
+        </div>
+
+        <div class="timeline">
+            <div class="memory">
+                <div class="memory-date">Janvier 2024</div>
+                <p>Un moment magique...</p>
+            </div>
+            <div class="memory">
+                <div class="memory-date">Mars 2024</div>
+                <p>Ces fous rires inoubliables...</p>
+            </div>
+            <div class="memory">
+                <div class="memory-date">Juin 2024</div>
+                <p>Cette belle aventure...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-button" onclick="toggleMusic()">🎵</button>
+        <button class="control-button" onclick="toggleParticles()">✨</button>
+        <button class="control-button" onclick="createFireworks()">🎆</button>
+    </div>
+
+    <script>
+        // Configuration Three.js pour le fond animé
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('background-animation'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Création des particules pour le fond
+        const particles = [];
+        const particleCount = 200; // Réduit pour de meilleures performances
+        
+        for (let i = 0; i < particleCount; i++) {
+            const geometry = new THREE.SphereGeometry(0.1, 6, 6);
+            const material = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(
+                    0.5 + Math.random() * 0.5, // Plus de rouge/rose
+                    0.2 + Math.random() * 0.3,
+                    0.5 + Math.random() * 0.5
+                ),
+                transparent: true,
+                opacity: 0.6 + Math.random() * 0.4
+            });
+            
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.set(
+                Math.random() * 2000 - 1000,
+                Math.random() * 2000 - 1000,
+                Math.random() * 2000 - 1000
+            );
+            particle.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2
+            );
+            
+            particles.push(particle);
+            scene.add(particle);
+        }
+
+        camera.position.z = 5;
+
+        // Gestion du modal des photos
+        const modal = document.getElementById('photoModal');
+        const modalImg = document.getElementById('modalImage');
+        let currentModalImage = 0;
+        const images = [
+            'img1.jpg',
+            'img2.jpg',
+            'img3.jpg',
+            'img4.jpg',
+            'img5.jpg',
+            'img6.jpg'
+        ];
+
+        function openModal(imageIndex) {
+            currentModalImage = imageIndex;
+            modal.classList.add('active');
+            modalImg.src = images[imageIndex];
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function changeModalImage(direction) {
+            currentModalImage = (currentModalImage + direction + images.length) % images.length;
+            modalImg.src = images[currentModalImage];
+        }
+
+        // Effets visuels
+        let particlesEnabled = true;
+        function toggleParticles() {
+            particlesEnabled = !particlesEnabled;
+            particles.forEach(particle => {
+                particle.visible = particlesEnabled;
+            });
+        }
+
+        function createFireworks() {
+            const colors = ['#ff0000', '#ffd700', '#ff69b4', '#00ff00', '#4169e1'];
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                particle.style.cssText = `
+                    position: fixed;
+                    left: ${50 + (Math.random() - 0.5) * 40}vw;
+                    top: ${50 + (Math.random() - 0.5) * 40}vh;
+                    width: 4px;
+                    height: 4px;
+                    background: ${color};
+                    border-radius: 50%;
+                    pointer-events: none;
+                    animation: float ${2 + Math.random() * 2}s linear;
+                `;
+                
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        // Gestion de l'audio
+        let audio;
+        let isPlaying = false;
+
+        function toggleMusic() {
+            if (!audio) {
+                audio = new Audio('happy.mp3');
+                audio.loop = true;
+            }
+            
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                audio.play().catch(() => {
+                    console.log('Lecture automatique bloquée');
+                });
+                isPlaying = true;
+            }
+        }
+
+        // Animation des souvenirs
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.3
+        };
+
+        const memoryObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.memory').forEach(memory => {
+            memoryObserver.observe(memory);
+        });
+
+        // Animation du fond
+        let lastTime = 0;
+        const targetFPS = 30;
+        const interval = 1000 / targetFPS;
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+
+            const delta = currentTime - lastTime;
+            if (delta < interval) return;
+
+            lastTime = currentTime - (delta % interval);
+
+            if (particlesEnabled) {
+                particles.forEach(particle => {
+                    particle.position.add(particle.velocity);
+                    particle.rotation.x += 0.01;
+                    particle.rotation.y += 0.01;
+
+                    // Réinitialisation des particules qui sortent du champ
+                    if (particle.position.z > 1000) particle.position.z = -1000;
+                    if (particle.position.z < -1000) particle.position.z = 1000;
+                    if (particle.position.x > 1000) particle.position.x = -1000;
+                    if (particle.position.x < -1000) particle.position.x = 1000;
+                    if (particle.position.y > 1000) particle.position.y = -1000;
+                    if (particle.position.y < -1000) particle.position.y = 1000;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Gestionnaires d'événements
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!modal.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowLeft') changeModalImage(-1);
+            if (e.key === 'ArrowRight') changeModalImage(1);
+        });
+
+        // Nettoyage
+        function cleanup() {
+            particles.forEach(particle => {
+                scene.remove(particle);
+                particle.geometry.dispose();
+                particle.material.dispose();
+            });
+            
+            if (audio) {
+                audio.pause();
+                audio = null;
+            }
+            
+            renderer.dispose();
+        }
+
+        window.addEventListener('beforeunload', cleanup);
+
+        // Démarrage des animations
+        animate(0);
+
+        // Animation initiale
+        setTimeout(() => {
+            createFireworks();
+            document.querySelectorAll('.memory').forEach((memory, index) => {
+                setTimeout(() => {
+                    memory.classList.add('visible');
+                }, index * 500);
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
